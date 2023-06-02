@@ -1,4 +1,6 @@
 package com.example.demo.util;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -590,4 +592,33 @@ public class RedisTemplateUti {
         return boundValueOperations.rightPop();
     }
 
+    /**
+     * lockKey 锁 key
+     * value 身份标识（保证锁不会被其他人释放）
+     * expireTime 锁的有效时间
+     **/
+    public  Boolean lock(String lockKey, String value, long expireTime) {
+        try {
+            return redisTemplate.opsForValue().setIfAbsent(lockKey, value, expireTime, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            System.out.println("异常");
+        }
+        return false;
+    }
+    /**
+     * key 锁的key
+     * value 身份标识
+     * return 成功返回true 失败返回false
+     **/
+    public  Boolean unlock2(String key, String value) {
+        // 获取当前锁的拥有者
+        Object currentValue = redisTemplate.opsForValue().get(key);
+        Boolean result = false;
+        // 判断value是否为锁的拥有者
+        if (StringUtils.isNotEmpty(String.valueOf(currentValue))) {
+            //删除锁
+            result = redisTemplate.opsForValue().getOperations().delete(key);
+        }
+        return result;
+    }
 }

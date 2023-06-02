@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,6 +13,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.annotation.Resource;
 
@@ -28,6 +32,27 @@ public class RedisConfig {
 
     @Resource
     RedisConnectionFactory factory;
+
+    @Value("${spring.redis.host}")
+    private String host;
+
+    @Value("${spring.redis.port}")
+    private int port;
+
+    @Value("${spring.redis.password}")
+    private String password;
+    @Value("${spring.redis.timeout}")
+    private int timeout;
+
+//    @Value("${spring.redis.pool.max-active}")
+//    private int maxActive;
+//
+//    @Value("${spring.redis.pool.max-idle}")
+//    private int maxIdle;
+//
+//    @Value("${spring.redis.pool.min-idle}")
+//    private int minIdle;
+
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
@@ -45,6 +70,15 @@ public class RedisConfig {
         //value hashmap序列化
         template.setHashValueSerializer(jackson2JsonRedisSerializer);
         return template;
+    }
+
+    @Bean
+    public JedisPool jedisPool(){
+        JedisPoolConfig jedisPoolConfig=new JedisPoolConfig();
+        jedisPoolConfig.setMaxIdle(8);
+        jedisPoolConfig.setMinIdle(0);
+        jedisPoolConfig.setMaxTotal(8);
+        return new JedisPool(jedisPoolConfig,host,port,timeout,password);
     }
 
 }
